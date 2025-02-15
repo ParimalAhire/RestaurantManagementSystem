@@ -2,8 +2,11 @@ import {
   type MenuItem, type InsertMenuItem,
   type Table, type InsertTable,
   type Order, type InsertOrder,
-  type OrderItem, type InsertOrderItem
+  type OrderItem, type InsertOrderItem,
+  menuItems, tables, orders, orderItems
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Menu Items
@@ -28,112 +31,98 @@ export interface IStorage {
   createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
 }
 
-export class MemStorage implements IStorage {
-  private menuItems: Map<number, MenuItem>;
-  private tables: Map<number, Table>;
-  private orders: Map<number, Order>;
-  private orderItems: Map<number, OrderItem>;
-  private currentIds: { [key: string]: number };
-
-  constructor() {
-    this.menuItems = new Map();
-    this.tables = new Map();
-    this.orders = new Map();
-    this.orderItems = new Map();
-    this.currentIds = {
-      menuItems: 1,
-      tables: 1,
-      orders: 1,
-      orderItems: 1
-    };
-  }
-
+export class DatabaseStorage implements IStorage {
   // Menu Items
   async getMenuItems(): Promise<MenuItem[]> {
-    return Array.from(this.menuItems.values());
+    return await db.select().from(menuItems);
   }
 
   async getMenuItem(id: number): Promise<MenuItem | undefined> {
-    return this.menuItems.get(id);
+    const [item] = await db.select().from(menuItems).where(eq(menuItems.id, id));
+    return item;
   }
 
   async createMenuItem(item: InsertMenuItem): Promise<MenuItem> {
-    const id = this.currentIds.menuItems++;
-    const menuItem = { ...item, id };
-    this.menuItems.set(id, menuItem);
+    const [menuItem] = await db.insert(menuItems).values(item).returning();
     return menuItem;
   }
 
   async updateMenuItem(id: number, item: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
-    const existing = this.menuItems.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...item };
-    this.menuItems.set(id, updated);
+    const [updated] = await db
+      .update(menuItems)
+      .set(item)
+      .where(eq(menuItems.id, id))
+      .returning();
     return updated;
   }
 
   async deleteMenuItem(id: number): Promise<boolean> {
-    return this.menuItems.delete(id);
+    const [deleted] = await db
+      .delete(menuItems)
+      .where(eq(menuItems.id, id))
+      .returning();
+    return !!deleted;
   }
 
   // Tables
   async getTables(): Promise<Table[]> {
-    return Array.from(this.tables.values());
+    return await db.select().from(tables);
   }
 
   async getTable(id: number): Promise<Table | undefined> {
-    return this.tables.get(id);
+    const [table] = await db.select().from(tables).where(eq(tables.id, id));
+    return table;
   }
 
   async createTable(table: InsertTable): Promise<Table> {
-    const id = this.currentIds.tables++;
-    const newTable = { ...table, id };
-    this.tables.set(id, newTable);
+    const [newTable] = await db.insert(tables).values(table).returning();
     return newTable;
   }
 
   async updateTable(id: number, table: Partial<InsertTable>): Promise<Table | undefined> {
-    const existing = this.tables.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...table };
-    this.tables.set(id, updated);
+    const [updated] = await db
+      .update(tables)
+      .set(table)
+      .where(eq(tables.id, id))
+      .returning();
     return updated;
   }
 
   // Orders
   async getOrders(): Promise<Order[]> {
-    return Array.from(this.orders.values());
+    return await db.select().from(orders);
   }
 
   async getOrder(id: number): Promise<Order | undefined> {
-    return this.orders.get(id);
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
-    const id = this.currentIds.orders++;
-    const newOrder = { ...order, id, createdAt: new Date() };
-    this.orders.set(id, newOrder);
+    const [newOrder] = await db.insert(orders).values(order).returning();
     return newOrder;
   }
 
   async updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined> {
-    const existing = this.orders.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...order };
-    this.orders.set(id, updated);
+    const [updated] = await db
+      .update(orders)
+      .set(order)
+      .where(eq(orders.id, id))
+      .returning();
     return updated;
   }
 
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
-    return Array.from(this.orderItems.values()).filter(item => item.orderId === orderId);
+    return await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
   }
 
   async createOrderItem(item: InsertOrderItem): Promise<OrderItem> {
-    const id = this.currentIds.orderItems++;
-    const orderItem = { ...item, id };
-    this.orderItems.set(id, orderItem);
+    const [orderItem] = await db.insert(orderItems).values(item).returning();
     return orderItem;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
