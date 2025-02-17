@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { apiRequest } from "@/lib/queryClient";
-import { PlusCircle, RefreshCcw, Check } from "lucide-react";
+import { PlusCircle, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Orders() {
@@ -179,7 +179,7 @@ export default function Orders() {
                   <div className="flex space-x-2">
                     {order.status !== "completed" && (
                       <Button
-                        variant={order.status === "served" ? "default" : "outline"}
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           const nextStatus = {
@@ -195,17 +195,8 @@ export default function Orders() {
                           }
                         }}
                       >
-                        {order.status === "served" ? (
-                          <>
-                            <Check className="mr-2 h-4 w-4" />
-                            Complete Order
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCcw className="mr-2 h-4 w-4" />
-                            Update Status
-                          </>
-                        )}
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        Update Status
                       </Button>
                     )}
                   </div>
