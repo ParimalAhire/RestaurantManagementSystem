@@ -16,6 +16,7 @@ export const tables = pgTable("tables", {
   number: integer("number").notNull().unique(),
   capacity: integer("capacity").notNull(),
   occupied: boolean("occupied").default(false),
+  arrivalTime: timestamp("arrival_time"),
 });
 
 export const orders = pgTable("orders", {

@@ -53,7 +53,10 @@ export default function Tables() {
 
   const updateTableStatusMutation = useMutation({
     mutationFn: async ({ id, occupied }: { id: number; occupied: boolean }) => {
-      await apiRequest("PATCH", `/api/tables/${id}`, { occupied });
+      await apiRequest("PATCH", `/api/tables/${id}`, {
+        occupied,
+        arrivalTime: occupied ? new Date().toISOString() : null,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tables"] });
@@ -158,6 +161,11 @@ export default function Tables() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span>Capacity: {table.capacity}</span>
                 </div>
+                {table.occupied && table.arrivalTime && (
+                  <div className="text-sm text-muted-foreground">
+                    Arrived: {new Date(table.arrivalTime).toLocaleTimeString()}
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span
                     className={`px-2 py-1 rounded-full text-xs ${
