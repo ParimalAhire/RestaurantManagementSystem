@@ -1,12 +1,13 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutGrid, Menu, ClipboardList, TableProperties } from "lucide-react";
+import { LayoutGrid, Menu, ClipboardList, TableProperties, ChefHat } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutGrid },
   { href: "/menu", label: "Menu", icon: Menu },
   { href: "/orders", label: "Orders", icon: ClipboardList },
   { href: "/tables", label: "Tables", icon: TableProperties },
+  { href: "/kitchen", label: "Kitchen", icon: ChefHat },
 ];
 
 export default function Nav() {

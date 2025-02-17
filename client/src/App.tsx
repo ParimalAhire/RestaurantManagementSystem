@@ -7,6 +7,7 @@ import Dashboard from "@/pages/dashboard";
 import Menu from "@/pages/menu";
 import Orders from "@/pages/orders";
 import Tables from "@/pages/tables";
+import Kitchen from "@/pages/kitchen";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
           <Route path="/menu" component={Menu} />
           <Route path="/orders" component={Orders} />
           <Route path="/tables" component={Tables} />
+          <Route path="/kitchen" component={Kitchen} />
           <Route component={NotFound} />
         </Switch>
       </main>
