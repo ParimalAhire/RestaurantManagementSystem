@@ -55,7 +55,11 @@ export const orderItems = pgTable("order_items", {
 });
 
 // Schema for data insertion
-export const insertMenuItemSchema = createInsertSchema(menuItems).omit({ id: true });
+export const insertMenuItemSchema = createInsertSchema(menuItems)
+  .omit({ id: true })
+  .extend({
+    price: z.string().regex(/^\d*\.?\d{0,2}$/, "Price must be a valid decimal with up to 2 decimal places"),
+  });
 export const insertTableSchema = createInsertSchema(tables).omit({ id: true });
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
 export const insertCustomerVisitSchema = createInsertSchema(customerVisits).omit({ id: true });

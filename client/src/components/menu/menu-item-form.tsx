@@ -27,7 +27,7 @@ export function MenuItemForm({ onSubmit, defaultValues }: MenuItemFormProps) {
     defaultValues: defaultValues || {
       name: "",
       description: "",
-      price: 0,
+      price: "",
       category: "",
       available: true,
     },
@@ -89,10 +89,23 @@ export function MenuItemForm({ onSubmit, defaultValues }: MenuItemFormProps) {
               <FormLabel>Price</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  step="0.01"
                   {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  type="text"
+                  inputMode="decimal"
+                  onChange={(e) => {
+                    // Only allow numbers and a single decimal point
+                    const value = e.target.value.replace(/[^0-9.]/g, '');
+                    // Ensure only one decimal point
+                    const parts = value.split('.');
+                    if (parts.length > 2) {
+                      return;
+                    }
+                    // Limit to 2 decimal places
+                    if (parts[1] && parts[1].length > 2) {
+                      return;
+                    }
+                    field.onChange(value);
+                  }}
                 />
               </FormControl>
               <FormMessage />
