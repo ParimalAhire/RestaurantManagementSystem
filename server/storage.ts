@@ -3,7 +3,9 @@ import {
   type Table, type InsertTable,
   type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem,
-  menuItems, tables, orders, orderItems
+  type Customer, type InsertCustomer,
+  type CustomerVisit, type InsertCustomerVisit,
+  menuItems, tables, orders, orderItems, customers, customerVisits
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -22,6 +24,14 @@ export interface IStorage {
   createTable(table: InsertTable): Promise<Table>;
   updateTable(id: number, table: Partial<InsertTable>): Promise<Table | undefined>;
 
+  // Customers
+  getCustomers(): Promise<Customer[]>;
+  getCustomer(id: number): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  getCustomerVisits(customerId: number): Promise<CustomerVisit[]>;
+  createCustomerVisit(visit: InsertCustomerVisit): Promise<CustomerVisit>;
+  updateCustomerVisit(id: number, endTime: Date): Promise<CustomerVisit | undefined>;
+
   // Orders
   getOrders(): Promise<Order[]>;
   getOrder(id: number): Promise<Order | undefined>;
@@ -29,6 +39,7 @@ export interface IStorage {
   updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined>;
   getOrderItems(orderId: number): Promise<OrderItem[]>;
   createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
+  getCustomerOrders(customerId: number): Promise<Order[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -88,6 +99,42 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  // Customers
+  async getCustomers(): Promise<Customer[]> {
+    return await db.select().from(customers);
+  }
+
+  async getCustomer(id: number): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer;
+  }
+
+  async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    const [newCustomer] = await db.insert(customers).values(customer).returning();
+    return newCustomer;
+  }
+
+  async getCustomerVisits(customerId: number): Promise<CustomerVisit[]> {
+    return await db
+      .select()
+      .from(customerVisits)
+      .where(eq(customerVisits.customerId, customerId));
+  }
+
+  async createCustomerVisit(visit: InsertCustomerVisit): Promise<CustomerVisit> {
+    const [newVisit] = await db.insert(customerVisits).values(visit).returning();
+    return newVisit;
+  }
+
+  async updateCustomerVisit(id: number, endTime: Date): Promise<CustomerVisit | undefined> {
+    const [updated] = await db
+      .update(customerVisits)
+      .set({ endTime })
+      .where(eq(customerVisits.id, id))
+      .returning();
+    return updated;
+  }
+
   // Orders
   async getOrders(): Promise<Order[]> {
     return await db.select().from(orders);
@@ -122,6 +169,13 @@ export class DatabaseStorage implements IStorage {
   async createOrderItem(item: InsertOrderItem): Promise<OrderItem> {
     const [orderItem] = await db.insert(orderItems).values(item).returning();
     return orderItem;
+  }
+
+  async getCustomerOrders(customerId: number): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.customerId, customerId));
   }
 }
 

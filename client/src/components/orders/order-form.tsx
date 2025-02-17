@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
-import type { InsertOrder, InsertOrderItem, MenuItem, Table } from "@shared/schema";
+import type { InsertOrder, InsertOrderItem, MenuItem, Table, Customer } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -24,16 +24,18 @@ import {
 interface OrderFormProps {
   tables: Table[];
   menuItems: MenuItem[];
+  customers: Customer[];
   onSubmit: (data: InsertOrder, items: InsertOrderItem[]) => Promise<void>;
 }
 
-export function OrderForm({ tables, menuItems, onSubmit }: OrderFormProps) {
+export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormProps) {
   const { toast } = useToast();
   const form = useForm<InsertOrder & { items: InsertOrderItem[] }>({
     resolver: zodResolver(insertOrderSchema.extend({
       items: insertOrderItemSchema.omit({ orderId: true }).array(),
     })),
     defaultValues: {
+      customerId: 0,
       tableId: 0,
       status: "pending",
       totalAmount: 0,
@@ -62,6 +64,34 @@ export function OrderForm({ tables, menuItems, onSubmit }: OrderFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="customerId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Customer</FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(parseInt(value))}
+                defaultValue={field.value.toString()}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a customer" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {customers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {customer.name} ({customer.phone})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="tableId"

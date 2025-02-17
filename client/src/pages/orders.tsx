@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { type Order, type MenuItem, type Table, type OrderItem } from "@shared/schema";
+import { type Order, type MenuItem, type Table, type OrderItem, type Customer } from "@shared/schema";
 import { OrderForm } from "@/components/orders/order-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +37,10 @@ export default function Orders() {
     queryKey: ["/api/tables"],
   });
 
+  const { data: customers, isLoading: customersLoading } = useQuery<Customer[]>({
+    queryKey: ["/api/customers"],
+  });
+
   const createOrderMutation = useMutation({
     mutationFn: async ({
       order,
@@ -47,13 +51,20 @@ export default function Orders() {
     }) => {
       const createdOrder = await apiRequest("POST", "/api/orders", order);
       const orderData = await createdOrder.json();
-      
+
       await Promise.all(
         items.map((item) =>
           apiRequest("POST", `/api/orders/${orderData.id}/items`, item)
         )
       );
-      
+
+      // Create a customer visit record when an order is created
+      if (order.customerId && order.tableId) {
+        await apiRequest("POST", `/api/customers/${order.customerId}/visits`, {
+          tableId: order.tableId,
+        });
+      }
+
       return orderData;
     },
     onSuccess: () => {
@@ -68,17 +79,30 @@ export default function Orders() {
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
       await apiRequest("PATCH", `/api/orders/${id}`, { status });
+
+      // When order is completed, end the customer visit
+      if (status === "completed") {
+        const order = orders?.find(o => o.id === id);
+        if (order) {
+          const visits = await apiRequest("GET", `/api/customers/${order.customerId}/visits`);
+          const visitsData = await visits.json();
+          const activeVisit = visitsData.find((v: any) => !v.endTime && v.tableId === order.tableId);
+          if (activeVisit) {
+            await apiRequest("PATCH", `/api/customer-visits/${activeVisit.id}/end`);
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
     },
   });
 
-  if (ordersLoading || menuItemsLoading || tablesLoading) {
+  if (ordersLoading || menuItemsLoading || tablesLoading || customersLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!menuItems || !tables) {
+  if (!menuItems || !tables || !customers) {
     return <div>Error loading data</div>;
   }
 
@@ -110,6 +134,7 @@ export default function Orders() {
             <OrderForm
               tables={tables}
               menuItems={menuItems}
+              customers={customers}
               onSubmit={async (order, items) => {
                 await createOrderMutation.mutateAsync({ order, items });
               }}
@@ -119,60 +144,67 @@ export default function Orders() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {orders?.map((order) => (
-          <Card key={order.id}>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Order #{order.id}</CardTitle>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                    order.status
-                  )}`}
-                >
-                  {order.status}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm text-muted-foreground">Table</div>
+        {orders?.map((order) => {
+          const customer = customers.find((c) => c.id === order.customerId);
+          return (
+            <Card key={order.id}>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Order #{order.id}</CardTitle>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
+                      order.status
+                    )}`}
+                  >
+                    {order.status}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   <div>
-                    {tables.find((t) => t.id === order.tableId)?.number || "Unknown"}
+                    <div className="text-sm text-muted-foreground">Customer</div>
+                    <div>{customer?.name || "Unknown"}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Table</div>
+                    <div>
+                      {tables.find((t) => t.id === order.tableId)?.number || "Unknown"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Total Amount</div>
+                    <div>${order.totalAmount}</div>
+                  </div>
+                  <div className="flex space-x-2">
+                    {order.status !== "completed" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const nextStatus = {
+                            pending: "preparing",
+                            preparing: "served",
+                            served: "completed",
+                          }[order.status];
+                          if (nextStatus) {
+                            updateOrderStatusMutation.mutate({
+                              id: order.id,
+                              status: nextStatus,
+                            });
+                          }
+                        }}
+                      >
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        Update Status
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Total Amount</div>
-                  <div>${order.totalAmount}</div>
-                </div>
-                <div className="flex space-x-2">
-                  {order.status !== "completed" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const nextStatus = {
-                          pending: "preparing",
-                          preparing: "served",
-                          served: "completed",
-                        }[order.status];
-                        if (nextStatus) {
-                          updateOrderStatusMutation.mutate({
-                            id: order.id,
-                            status: nextStatus,
-                          });
-                        }
-                      }}
-                    >
-                      <RefreshCcw className="mr-2 h-4 w-4" />
-                      Update Status
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

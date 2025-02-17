@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertMenuItemSchema, insertOrderSchema, insertTableSchema, insertOrderItemSchema } from "@shared/schema";
+import { insertMenuItemSchema, insertOrderSchema, insertTableSchema, insertOrderItemSchema, insertCustomerSchema, insertCustomerVisitSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express) {
   // Menu Items
@@ -67,6 +67,62 @@ export async function registerRoutes(app: Express) {
       return res.status(404).json({ error: "Table not found" });
     }
     res.json(updated);
+  });
+
+  // Customers
+  app.get("/api/customers", async (req, res) => {
+    const customers = await storage.getCustomers();
+    res.json(customers);
+  });
+
+  app.get("/api/customers/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const customer = await storage.getCustomer(id);
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+    res.json(customer);
+  });
+
+  app.post("/api/customers", async (req, res) => {
+    const parsed = insertCustomerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error });
+    }
+    const customer = await storage.createCustomer(parsed.data);
+    res.status(201).json(customer);
+  });
+
+  app.get("/api/customers/:id/visits", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const visits = await storage.getCustomerVisits(id);
+    res.json(visits);
+  });
+
+  app.post("/api/customers/:id/visits", async (req, res) => {
+    const customerId = parseInt(req.params.id);
+    const parsed = insertCustomerVisitSchema.safeParse({ ...req.body, customerId });
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error });
+    }
+    const visit = await storage.createCustomerVisit(parsed.data);
+    res.status(201).json(visit);
+  });
+
+  app.patch("/api/customer-visits/:id/end", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const endTime = new Date();
+    const updated = await storage.updateCustomerVisit(id, endTime);
+    if (!updated) {
+      return res.status(404).json({ error: "Visit not found" });
+    }
+    res.json(updated);
+  });
+
+  app.get("/api/customers/:id/orders", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const orders = await storage.getCustomerOrders(id);
+    res.json(orders);
   });
 
   // Orders
