@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutGrid, Menu, ClipboardList, TableProperties, ChefHat } from "lucide-react";
+import { LayoutGrid, Menu, ClipboardList, TableProperties, ChefHat, Users } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutGrid },
@@ -8,6 +8,7 @@ const navItems = [
   { href: "/orders", label: "Orders", icon: ClipboardList },
   { href: "/tables", label: "Tables", icon: TableProperties },
   { href: "/kitchen", label: "Kitchen", icon: ChefHat },
+  { href: "/customers", label: "Customers", icon: Users },
 ];
 
 export default function Nav() {
