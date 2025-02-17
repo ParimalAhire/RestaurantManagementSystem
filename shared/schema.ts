@@ -6,7 +6,7 @@ export const menuItems = pgTable("menu_items", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  price: decimal("price").notNull(),
+  price: integer("price").notNull(), 
   category: text("category").notNull(),
   available: boolean("available").default(true),
 });
@@ -19,7 +19,6 @@ export const tables = pgTable("tables", {
   arrivalTime: timestamp("arrival_time"),
 });
 
-// New customers table
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -28,7 +27,6 @@ export const customers = pgTable("customers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Track customer visits and table allocations
 export const customerVisits = pgTable("customer_visits", {
   id: serial("id").primaryKey(),
   customerId: integer("customer_id").notNull(),
@@ -39,9 +37,9 @@ export const customerVisits = pgTable("customer_visits", {
 
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
-  customerId: integer("customer_id").notNull(), // Link to customer
+  customerId: integer("customer_id").notNull(), 
   tableId: integer("table_id").notNull(),
-  status: text("status").notNull(), // pending, preparing, served, completed
+  status: text("status").notNull(), 
   totalAmount: decimal("total_amount").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -54,11 +52,10 @@ export const orderItems = pgTable("order_items", {
   price: decimal("price").notNull(),
 });
 
-// Schema for data insertion
 export const insertMenuItemSchema = createInsertSchema(menuItems)
   .omit({ id: true })
   .extend({
-    price: z.string().regex(/^\d*\.?\d{0,2}$/, "Price must be a valid decimal with up to 2 decimal places"),
+    price: z.number().int("Price must be a whole number").positive("Price must be positive"),
   });
 export const insertTableSchema = createInsertSchema(tables).omit({ id: true });
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
@@ -66,7 +63,6 @@ export const insertCustomerVisitSchema = createInsertSchema(customerVisits).omit
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true });
 
-// Types for TypeScript
 export type MenuItem = typeof menuItems.$inferSelect;
 export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
 export type Table = typeof tables.$inferSelect;

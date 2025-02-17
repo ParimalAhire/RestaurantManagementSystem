@@ -38,7 +38,7 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
       customerId: 0,
       tableId: 0,
       status: "pending",
-      totalAmount: "0",
+      totalAmount: 0,
       items: [],
     },
   });
@@ -49,25 +49,24 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
       // Calculate total amount from items
       const totalAmount = items.reduce((sum, item) => {
         const menuItem = menuItems.find(m => m.id === item.menuItemId);
-        return sum + (Number(menuItem?.price || 0) * item.quantity);
+        return sum + ((menuItem?.price || 0) * item.quantity);
       }, 0);
 
-      // Convert total amount to string with 2 decimal places
       const orderWithTotal = {
         ...order,
-        totalAmount: totalAmount.toFixed(2),
+        totalAmount: totalAmount,
       };
 
-      // Convert price to string for each item
-      const itemsWithStringPrice = items.map(item => {
+      // Set price for each item
+      const itemsWithPrice = items.map(item => {
         const menuItem = menuItems.find(m => m.id === item.menuItemId);
         return {
           ...item,
-          price: (Number(menuItem?.price || 0)).toFixed(2),
+          price: menuItem?.price || 0,
         };
       });
 
-      await onSubmit(orderWithTotal, itemsWithStringPrice);
+      await onSubmit(orderWithTotal, itemsWithPrice);
       form.reset();
       toast({
         title: "Success",
@@ -156,7 +155,7 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
                         // Update price when menu item changes
                         const menuItem = menuItems.find(m => m.id === parseInt(value));
                         if (menuItem) {
-                          form.setValue(`items.${index}.price`, menuItem.price.toString());
+                          form.setValue(`items.${index}.price`, menuItem.price);
                         }
                       }}
                       defaultValue={field.value.toString()}
@@ -207,7 +206,7 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
           onClick={() =>
             form.setValue("items", [
               ...form.watch("items"),
-              { menuItemId: 0, quantity: 1, price: "0" },
+              { menuItemId: 0, quantity: 1, price: 0 },
             ])
           }
         >
