@@ -38,7 +38,7 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
       customerId: 0,
       tableId: 0,
       status: "pending",
-      totalAmount: 0,
+      totalAmount: "0",
       items: [],
     },
   });
@@ -46,7 +46,28 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
   const handleSubmit = async (data: InsertOrder & { items: InsertOrderItem[] }) => {
     try {
       const { items, ...order } = data;
-      await onSubmit(order, items);
+      // Calculate total amount from items
+      const totalAmount = items.reduce((sum, item) => {
+        const menuItem = menuItems.find(m => m.id === item.menuItemId);
+        return sum + (Number(menuItem?.price || 0) * item.quantity);
+      }, 0);
+
+      // Convert total amount to string with 2 decimal places
+      const orderWithTotal = {
+        ...order,
+        totalAmount: totalAmount.toFixed(2),
+      };
+
+      // Convert price to string for each item
+      const itemsWithStringPrice = items.map(item => {
+        const menuItem = menuItems.find(m => m.id === item.menuItemId);
+        return {
+          ...item,
+          price: (Number(menuItem?.price || 0)).toFixed(2),
+        };
+      });
+
+      await onSubmit(orderWithTotal, itemsWithStringPrice);
       form.reset();
       toast({
         title: "Success",
@@ -130,7 +151,14 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
                   <FormItem className="flex-1">
                     <FormLabel>Item</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      onValueChange={(value) => {
+                        field.onChange(parseInt(value));
+                        // Update price when menu item changes
+                        const menuItem = menuItems.find(m => m.id === parseInt(value));
+                        if (menuItem) {
+                          form.setValue(`items.${index}.price`, menuItem.price.toString());
+                        }
+                      }}
                       defaultValue={field.value.toString()}
                     >
                       <FormControl>
@@ -179,7 +207,7 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
           onClick={() =>
             form.setValue("items", [
               ...form.watch("items"),
-              { menuItemId: 0, quantity: 1, price: 0 },
+              { menuItemId: 0, quantity: 1, price: "0" },
             ])
           }
         >
