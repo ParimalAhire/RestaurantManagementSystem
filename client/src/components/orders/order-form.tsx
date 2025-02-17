@@ -25,15 +25,17 @@ interface OrderFormProps {
   tables: Table[];
   menuItems: MenuItem[];
   customers: Customer[];
-  onSubmit: (data: InsertOrder, items: InsertOrderItem[]) => Promise<void>;
+  onSubmit: (order: InsertOrder, items: InsertOrderItem[]) => Promise<void>;
 }
 
 export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormProps) {
   const { toast } = useToast();
   const form = useForm<InsertOrder & { items: InsertOrderItem[] }>({
-    resolver: zodResolver(insertOrderSchema.extend({
-      items: insertOrderItemSchema.omit({ orderId: true }).array(),
-    })),
+    resolver: zodResolver(
+      insertOrderSchema.extend({
+        items: insertOrderItemSchema.omit({ orderId: true }).array(),
+      })
+    ),
     defaultValues: {
       customerId: 0,
       tableId: 0,
@@ -46,18 +48,20 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
   const handleSubmit = async (data: InsertOrder & { items: InsertOrderItem[] }) => {
     try {
       const { items, ...order } = data;
+
       // Calculate total amount from items
       const totalAmount = items.reduce((sum, item) => {
         const menuItem = menuItems.find(m => m.id === item.menuItemId);
         return sum + ((menuItem?.price || 0) * item.quantity);
       }, 0);
 
-      const orderWithTotal = {
+      // Create the order with calculated total
+      const orderData: InsertOrder = {
         ...order,
-        totalAmount: totalAmount,
+        totalAmount,
       };
 
-      // Set price for each item
+      // Set the price for each item based on the menu item price
       const itemsWithPrice = items.map(item => {
         const menuItem = menuItems.find(m => m.id === item.menuItemId);
         return {
@@ -66,13 +70,14 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
         };
       });
 
-      await onSubmit(orderWithTotal, itemsWithPrice);
+      await onSubmit(orderData, itemsWithPrice);
       form.reset();
       toast({
         title: "Success",
         description: "Order created successfully",
       });
     } catch (error) {
+      console.error('Order creation error:', error);
       toast({
         title: "Error",
         description: "Failed to create order",
@@ -168,7 +173,7 @@ export function OrderForm({ tables, menuItems, customers, onSubmit }: OrderFormP
                       <SelectContent>
                         {menuItems.map((item) => (
                           <SelectItem key={item.id} value={item.id.toString()}>
-                            {item.name} (${item.price})
+                            {item.name} (₹{item.price})
                           </SelectItem>
                         ))}
                       </SelectContent>

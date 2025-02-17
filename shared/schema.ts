@@ -40,7 +40,7 @@ export const orders = pgTable("orders", {
   customerId: integer("customer_id").notNull(), 
   tableId: integer("table_id").notNull(),
   status: text("status").notNull(), 
-  totalAmount: decimal("total_amount").notNull(),
+  totalAmount: integer("total_amount").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -49,7 +49,7 @@ export const orderItems = pgTable("order_items", {
   orderId: integer("order_id").notNull(),
   menuItemId: integer("menu_item_id").notNull(),
   quantity: integer("quantity").notNull(),
-  price: decimal("price").notNull(),
+  price: integer("price").notNull(),
 });
 
 export const insertMenuItemSchema = createInsertSchema(menuItems)
@@ -60,8 +60,16 @@ export const insertMenuItemSchema = createInsertSchema(menuItems)
 export const insertTableSchema = createInsertSchema(tables).omit({ id: true });
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
 export const insertCustomerVisitSchema = createInsertSchema(customerVisits).omit({ id: true });
-export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
-export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true });
+export const insertOrderSchema = createInsertSchema(orders)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    totalAmount: z.number().int().nonnegative(),
+  });
+export const insertOrderItemSchema = createInsertSchema(orderItems)
+  .omit({ id: true })
+  .extend({
+    price: z.number().int().nonnegative(),
+  });
 
 export type MenuItem = typeof menuItems.$inferSelect;
 export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
