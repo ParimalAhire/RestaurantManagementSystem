@@ -93,7 +93,10 @@ export function MenuItemForm({ onSubmit, defaultValues }: MenuItemFormProps) {
                   type="number"
                   min="0"
                   step="1"
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    field.onChange(value);
+                  }}
                 />
               </FormControl>
               <FormMessage />
