@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarOpen: false }" :class="{ 'dark': darkMode }">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Management | {% block title %}Dashboard{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        /* Smooth transitions */
+        html, body { transition: background-color 0.3s ease, color 0.3s ease; }
+        /* Card hover effect */
+        .card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); }
+        /* Stat card styling */
+        .stat-card { border-radius: 16px; overflow: hidden; }
+        .stat-icon { font-size: 3rem; opacity: 0.85; }
+        /* Button transitions */
+        .quick-action-btn { transition: transform 0.3s ease, background-color 0.3s ease; }
+        .quick-action-btn:hover { transform: scale(1.05); }
+        /* Fade-in animation */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.6s ease-out; }
+        /* Dark mode styles */
+        .dark .bg-gray-100 { background-color: #121212; }
+        .dark .bg-white { background-color: #1e1e1e; }
+        .dark .text-gray-800 { color: #e0e0e0; }
+        .dark .bg-gray-800 { background-color: #2d2d2d; }
+        .dark .card { background-color: #1e1e1e; }
+        .dark .card-header { background-color: #3a3a3a; }
+        /* Glassmorphism effect */
+        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); }
+        /* Chart container */
+        .chart-container { position: relative; height: 300px; width: 100%; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 min-h-screen flex font-sans">
+    <!-- Sidebar -->
+    <aside class="bg-gray-900 text-white w-64 space-y-6 py-7 px-4 fixed inset-y-0 left-0 transform md:relative md:translate-x-0 transition duration-300 ease-in-out z-50" 
+          :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}" aria-label="Sidebar">
+        <div class="flex items-center justify-between px-4">
+            <h2 class="text-2xl font-bold text-white tracking-tight">Restaurant</h2>
+            <button class="md:hidden" @click="sidebarOpen = false" aria-label="Close Sidebar">
+                <i class="fas fa-times h-6 w-6 text-white"></i>
+            </button>
+        </div>
+        <nav class="flex-1">
+            <ul class="space-y-2">
+                <li>
+                    <a href="{% url 'dashboard' %}" class="flex items-center py-3 px-4 rounded-lg transition duration-200 hover:bg-gray-800 hover:text-white" aria-label="Dashboard">
+                        <i class="fas fa-home h-5 w-5 mr-3"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'tables' %}" class="flex items-center py-3 px-4 rounded-lg transition duration-200 hover:bg-gray-800 hover:text-white" aria-label="Tables">
+                        <i class="fas fa-table h-5 w-5 mr-3"></i> Tables
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'customers' %}" class="flex items-center py-3 px-4 rounded-lg transition duration-200 hover:bg-gray-800 hover:text-white" aria-label="Customers">
+                        <i class="fas fa-users h-5 w-5 mr-3"></i> Customers
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'orders' %}" class="flex items-center py-3 px-4 rounded-lg transition duration-200 hover:bg-gray-800 hover:text-white" aria-label="Orders">
+                        <i class="fas fa-shopping-cart h-5 w-5 mr-3"></i> Orders
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'menu' %}" class="flex items-center py-3 px-4 rounded-lg transition duration-200 hover:bg-gray-800 hover:text-white" aria-label="Menu">
+                        <i class="fas fa-book h-5 w-5 mr-3"></i> Menu
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'employees' %}" class="flex items-center py-3 px-4 rounded-lg transition duration-200 hover:bg-gray-800 hover:text-white" aria-label="Employees">
+                        <i class="fas fa-user-tie h-5 w-5 mr-3"></i> Employees
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col">
+        <!-- Top Navigation Bar -->
+        <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
+            <div class="flex items-center justify-between h-16 px-6">
+                <button class="md:hidden" @click="sidebarOpen = true" aria-label="Open Sidebar">
+                    <i class="fas fa-bars h-6 w-6 text-gray-800 dark:text-gray-200"></i>
+                </button>
+                <div class="flex items-center space-x-4">
+                    <!-- Search Bar -->
+                    <div class="relative hidden md:block">
+                        <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <!-- Dark Mode Toggle -->
+                    <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" 
+                            class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700" 
+                            aria-label="Toggle Dark Mode">
+                        <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'" class="text-gray-800 dark:text-gray-200"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="container-fluid px-6 py-8 flex-1">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+</body>
+</html>

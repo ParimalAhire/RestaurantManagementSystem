@@ -1,0 +1,363 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from datetime import datetime, timedelta, timezone
+from .models import MenuItem, Table, Customer, Order, Employee, OrderItem
+from .forms import CustomerForm, TableForm, MenuItemForm, OrderForm, OrderItemForm, UpdateOrderForm, UpdateOrderItemForm, EmployeeForm
+from django.contrib import messages
+from django.db.models import Sum
+from django.db.models.functions import TruncMonth
+
+def dashboard(request):
+    total_orders = Order.objects.count()
+    occupied_tables = Table.objects.filter(occupied=True).count()
+    total_menu_items = MenuItem.objects.count()
+    total_customers = Customer.objects.count()
+    total_employees = Employee.objects.count()
+
+    context = {
+        'total_orders': total_orders,
+        'occupied_tables': occupied_tables,
+        'total_menu_items': total_menu_items,
+        'total_customers': total_customers,
+        'total_employees': total_employees,
+    }
+    return render(request, 'restaurant/dashboard.html', context)
+
+def tables(request):
+    tables = Table.objects.all()
+    return render(request, 'restaurant/tables.html', {'tables': tables})
+
+def customers(request):
+    customers = Customer.objects.all()
+    return render(request, 'restaurant/customers.html', {'customers': customers})
+
+def orders(request):
+    orders = Order.objects.all()
+    return render(request, 'restaurant/orders.html', {'orders': orders})
+
+def menu(request):
+    menu_items = MenuItem.objects.all()
+    return render(request, 'restaurant/menu.html', {'menu_items': menu_items})
+
+def employees(request):
+    employees = Employee.objects.all()
+    return render(request, 'restaurant/employees.html', {'employees': employees})
+
+
+# Customers
+def customer_list(request):
+    customers = Customer.objects.all()
+    return render(request, 'restaurant/customers.html', {'customers': customers})
+
+# View to add a new customer (no pk required)
+def add_customer(request):
+    if request.method == "POST":
+        form = CustomerForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('customers')  # Redirect to the customer list after saving
+    else:
+        form = CustomerForm()
+
+    return render(request, 'restaurant/add_customer.html', {'form': form})
+
+# View to edit an existing customer (pk required)
+def edit_customer(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)  # Retrieve the customer by pk
+    if request.method == "POST":
+        form = CustomerForm(request.POST, instance=customer)
+        if form.is_valid():
+            form.save()
+            return redirect('customers')  # Redirect to the customer list after updating
+    else:
+        form = CustomerForm(instance=customer)
+
+    return render(request, 'restaurant/edit_customer.html', {'form': form, 'customer': customer})
+
+def delete_customer(request,pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    customer.delete()
+    messages.success(request, "Customer deleted successfully!")
+    return redirect('customers') 
+
+# Tables
+def tables(request):
+    all_tables = Table.objects.all()
+    return render(request, 'restaurant/tables.html', {'tables': all_tables})
+
+def add_table(request):
+    if request.method == 'POST':
+        form = TableForm(request.POST)
+        if form.is_valid():
+            form.save()  # Table is saved without a customer initially
+            return redirect('tables')
+    else:
+        form = TableForm()
+    return render(request, 'restaurant/table_form.html', {'form': form, 'title': 'Add Table'})
+
+def edit_table(request, pk):
+    table = get_object_or_404(Table, pk=pk)
+    if request.method == 'POST':
+        form = TableForm(request.POST, instance=table)
+        if form.is_valid():
+            form.save()  # If customer is assigned, table will be marked as occupied
+            return redirect('tables')
+    else:
+        form = TableForm(instance=table)
+    return render(request, 'restaurant/table_form.html', {'form': form, 'title': 'Edit Table'})
+
+def delete_table(request, pk):
+    table = get_object_or_404(Table, pk=pk)
+    table.delete()
+    return redirect('tables')
+
+
+# Menu
+def menu_list(request):
+    menu_items = MenuItem.objects.all()
+    return render(request, 'restaurant/menu.html', {'menu_items': menu_items})
+
+# View to add a new menu item
+def add_menu_item(request):
+    if request.method == 'POST':
+        form = MenuItemForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('menu_list')  # Redirect to menu list
+    else:
+        form = MenuItemForm()
+    return render(request, 'restaurant/menu_form.html', {'form': form})
+
+# View to update an existing menu item
+def update_menu_item(request, pk):
+    menu_item = get_object_or_404(MenuItem, pk=pk)
+    if request.method == 'POST':
+        form = MenuItemForm(request.POST, instance=menu_item)
+        if form.is_valid():
+            form.save()
+            return redirect('menu_list')
+    else:
+        form = MenuItemForm(instance=menu_item)
+    return render(request, 'restaurant/menu_form.html', {'form': form})
+
+# View to delete a menu item
+def delete_menu_item(request, pk):
+    menu_item = get_object_or_404(MenuItem, pk=pk)
+    menu_item.delete()
+    return redirect('menu')
+
+
+# Orders
+def order_list(request):
+    orders = Order.objects.all()  # Get all orders
+    return render(request, 'restaurant/order.html', {'orders': orders})
+
+
+# View to create an order for a specific table
+def create_order(request, table_id):
+    table = get_object_or_404(Table, id=table_id)
+    if not table.customer:
+        messages.error(request, "This table does not have a customer assigned.")
+        return redirect('tables')
+
+    if request.method == 'POST':
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            order = form.save(commit=False)
+            order.table = table
+            order.customer = table.customer
+            order.save()
+            return redirect('add_items_to_order', order.id)
+    else:
+        form = OrderForm()
+
+    return render(request, 'restaurant/order_form.html', {'form': form, 'table': table})
+
+# View to add items to an order
+def add_items_to_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    if request.method == 'POST':
+        form = OrderItemForm(request.POST)
+        if form.is_valid():
+            order_item = form.save(commit=False)
+            order_item.order = order
+            order_item.save()
+
+            # Recalculate total amount
+            order.total_amount = sum(item.price * item.quantity for item in order.orderitem_set.all())
+            order.save()
+
+            return redirect('add_items_to_order', order.id)
+    else:
+        form = OrderItemForm()
+
+    menu_items = MenuItem.objects.all()
+    return render(request, 'restaurant/order_items_form.html', {'form': form, 'order': order, 'menu_items': menu_items})
+
+# View to update the status of an order
+def update_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    
+    if request.method == 'POST':
+        form = UpdateOrderForm(request.POST, instance=order)
+        if form.is_valid():
+            form.save()
+
+            # Recalculate the total_amount after updating order status
+            order.total_amount = sum(item.price * item.quantity for item in order.orderitem_set.all())
+            order.save()
+
+            return redirect('orders')
+    else:
+        form = UpdateOrderForm(instance=order)
+
+    return render(request, 'restaurant/update_order_form.html', {'form': form, 'order': order})
+
+# View to update an order item
+def update_order_item(request, order_item_id):
+    order_item = get_object_or_404(OrderItem, id=order_item_id)
+
+    if request.method == 'POST':
+        form = UpdateOrderItemForm(request.POST, instance=order_item)
+        if form.is_valid():
+            order_item = form.save()
+
+            # Recalculate the total amount for the order
+            order_item.order.total_amount = sum(item.price * item.quantity for item in order_item.order.orderitem_set.all())
+            order_item.order.save()
+
+            return redirect('add_items_to_order', order_item.order.id)
+    else:
+        form = UpdateOrderItemForm(instance=order_item)
+
+    return render(request, 'restaurant/update_order_item_form.html', {'form': form, 'order_item': order_item})
+
+# View to delete an order
+def delete_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    order.delete()
+    return redirect('orders')
+
+# View to delete an order item
+def delete_order_item(request, order_item_id):
+    order_item = get_object_or_404(OrderItem, id=order_item_id)
+    order = order_item.order
+    order_item.delete()
+
+    # Recalculate the total amount after deleting an order item
+    order.total_amount = sum(item.price * item.quantity for item in order.orderitem_set.all())
+    order.save()
+
+    return redirect('add_items_to_order', order.id)
+
+def select_table_for_order(request):
+    tables = Table.objects.all()
+    return render(request, 'restaurant/select_table.html', {'tables': tables})
+
+def order_detail(request, id):
+    order = get_object_or_404(Order, id=id)
+    return render(request, 'restaurant/order_detail.html', {'order': order})
+
+def add_order_item(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    
+    if request.method == 'POST':
+        form = OrderItemForm(request.POST)
+        if form.is_valid():
+            order_item = form.save(commit=False)
+            order_item.order = order  # Associate the order with the item
+            order_item.save()
+            return redirect('order_detail', id=order.id)  # Redirect to the order details page
+    
+    else:
+        form = OrderItemForm()
+
+    return render(request, 'restaurant/add_order_item.html', {'order': order, 'form': form})
+
+# Employees
+# View to show the main employee page
+def employee_dashboard(request):
+    employees = Employee.objects.all()
+    return render(request, 'restaurant/employee.html', {'employees': employees})
+
+# View to create a new employee
+def create_employee(request):
+    if request.method == 'POST':
+        form = EmployeeForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Employee created successfully!")
+            return redirect('employee_dashboard')  # Redirect to employee dashboard after creating an employee
+    else:
+        form = EmployeeForm()
+    return render(request, 'restaurant/employee_form.html', {'form': form})
+
+# View to update an employee
+def update_employee(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    if request.method == 'POST':
+        form = EmployeeForm(request.POST, instance=employee)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Employee updated successfully!")
+            return redirect('employee_dashboard')  # Redirect to employee dashboard after updating
+    else:
+        form = EmployeeForm(instance=employee)
+    return render(request, 'restaurant/employee_form.html', {'form': form})
+
+# View to delete an employee
+def delete_employee(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    employee.delete()
+    messages.success(request, "Employee deleted successfully!")
+    return redirect('employee') 
+
+def increase_item_quantity(request, order_id, item_id):
+    item = get_object_or_404(OrderItem, id=item_id)
+    item.quantity += 1
+    item.save()
+    return redirect('order_detail', id=order_id)
+
+def decrease_item_quantity(request, order_id, item_id):
+    item = get_object_or_404(OrderItem, id=item_id)
+    if item.quantity > 1:
+        item.quantity -= 1
+        item.save()
+    else:
+        item.delete()
+    return redirect('order_detail', id=order_id)
+
+def delete_order_item(request, item_id):
+    item = get_object_or_404(OrderItem, id=item_id)
+    order_id = item.order.id
+    item.delete()
+    return redirect('order_detail', id=order_id)
+
+
+def dashboard_view(request):
+    today = timezone.now().date()
+    week_ago = today - timedelta(days=7)
+    month_ago = today - timedelta(days=30)
+
+    total_tables = Table.objects.count()  # Total number of tables
+    occupied_tables_today = Table.objects.filter(status='occupied', updated_at__date=today).count()
+    occupied_tables_week = Table.objects.filter(status='occupied', updated_at__gte=week_ago).count()
+    occupied_tables_month = Table.objects.filter(status='occupied', updated_at__gte=month_ago).count()
+
+    context = {
+        'total_orders': Order.objects.filter(date=today).count(),
+        'total_orders_week': Order.objects.filter(date__gte=week_ago).count(),
+        'total_orders_month': Order.objects.filter(date__gte=month_ago).count(),
+        'occupied_tables': occupied_tables_today,
+        'occupied_tables_week': occupied_tables_week,
+        'occupied_tables_month': occupied_tables_month,
+        'total_menu_items': MenuItem.objects.count(),
+        'total_customers': Customer.objects.count(),
+        'total_customers_week': Customer.objects.filter(created_at__gte=week_ago).count(),
+        'total_customers_month': Customer.objects.filter(created_at__gte=month_ago).count(),
+        'total_employees': Employee.objects.count(),
+        'occupancy_rate': (occupied_tables_today / total_tables * 100) if total_tables > 0 else 0,
+        'occupancy_rate_week': (occupied_tables_week / total_tables * 100) if total_tables > 0 else 0,
+        'occupancy_rate_month': (occupied_tables_month / total_tables * 100) if total_tables > 0 else 0,
+    }
+    return render(request, 'restaurant/dashboard.html', context)

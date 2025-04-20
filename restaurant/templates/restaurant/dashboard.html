@@ -1,0 +1,148 @@
+{% extends 'restaurant/base.html' %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+    <!-- Dashboard Header -->
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Restaurant Dashboard</h1>
+        <div class="flex items-center text-gray-600 dark:text-gray-400">
+            <i class="fas fa-clock mr-2"></i> {% now "F j, Y" %}
+        </div>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <!-- Total Orders Card -->
+        <div class="card stat-card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <div class="p-5">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h6 class="text-uppercase text-xs font-semibold tracking-wider opacity-80">Total Orders</h6>
+                        <h2 class="text-3xl font-bold">{{ total_orders }}</h2>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-cart-shopping"></i>
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'orders' %}" class="block p-3 bg-blue-600 bg-opacity-20 text-white flex justify-between items-center hover:bg-opacity-30 transition" aria-label="View Order Details">
+                <span class="text-sm">View Details</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+
+        <!-- Occupied Tables Card -->
+        <div class="card stat-card bg-gradient-to-r from-green-500 to-green-600 text-white">
+            <div class="p-5">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h6 class="text-uppercase text-xs font-semibold tracking-wider opacity-80">Occupied Tables</h6>
+                        <h2 class="text-3xl font-bold">{{ total_orders }}</h2>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-table"></i>
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'tables' %}" class="block p-3 bg-green-600 bg-opacity-20 text-white flex justify-between items-center hover:bg-opacity-30 transition" aria-label="View Table Details">
+                <span class="text-sm">View Details</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+
+        <!-- Menu Items Card -->
+        <div class="card stat-card bg-gradient-to-r from-cyan-500 to-cyan-600 text-white">
+            <div class="p-5">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h6 class="text-uppercase text-xs font-semibold tracking-wider opacity-80">Menu Items</h6>
+                        <h2 class="text-3xl font-bold">{{ total_menu_items }}</h2>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'menu' %}" class="block p-3 bg-cyan-600 bg-opacity-20 text-white flex justify-between items-center hover:bg-opacity-30 transition" aria-label="View Menu Details">
+                <span class="text-sm">View Details</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+
+        <!-- Total Customers Card -->
+        <div class="card stat-card bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
+            <div class="p-5">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h6 class="text-uppercase text-xs font-semibold tracking-wider opacity-80">Total Customers</h6>
+                        <h2 class="text-3xl font-bold">{{ total_customers }}</h2>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'customers' %}" class="block p-3 bg-yellow-600 bg-opacity-20 text-white flex justify-between items-center hover:bg-opacity-30 transition" aria-label="View Customer Details">
+                <span class="text-sm">View Details</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Additional Info Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <!-- Employees Card -->
+        <div class="card stat-card bg-white dark:bg-gray-800 shadow-lg">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h6 class="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                    <i class="fas fa-user-tie mr-2"></i>Employee Overview
+                </h6>
+            </div>
+            <div class="p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-600 dark:text-gray-400">Total Employees</h4>
+                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">{{ total_employees }}</h2>
+                    </div>
+                    <div class="stat-icon text-blue-600 dark:text-blue-400">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <a href="{% url 'employees' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition" aria-label="Manage Employees">
+                    Manage Employees
+                    <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="card stat-card bg-white dark:bg-gray-800 shadow-lg lg:col-span-2">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h6 class="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                    <i class="fas fa-bolt mr-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="p-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a href="{% url 'orders' %}" class="quick-action-btn inline-flex items-center justify-between px-4 py-3 border-2 border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 transition" aria-label="New Order">
+                        <span><i class="fas fa-plus-circle mr-2"></i>New Order</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="{% url 'tables' %}" class="quick-action-btn inline-flex items-center justify-between px-4 py-3 border-2 border-green-500 text-green-500 rounded-lg hover:bg-green-50 dark:hover:bg-green-900 transition" aria-label="Manage Tables">
+                        <span><i class="fas fa-table mr-2"></i>Manage Tables</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="{% url 'menu' %}" class="quick-action-btn inline-flex items-center justify-between px-4 py-3 border-2 border-cyan-500 text-cyan-500 rounded-lg hover:bg-cyan-50 dark:hover:bg-cyan-900 transition" aria-label="Edit Menu">
+                        <span><i class="fas fa-pencil-alt mr-2"></i>Edit Menu</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="{% url 'customers' %}" class="quick-action-btn inline-flex items-center justify-between px-4 py-3 border-2 border-yellow-500 text-yellow-500 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-900 transition" aria-label="Add Customer">
+                        <span><i class="fas fa-user-plus mr-2"></i>Add Customer</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends 'restaurant/base.html' %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+    <!-- Header -->
+    <div class="sm:flex sm:justify-between sm:items-center mb-8">
+        <div class="mb-4 sm:mb-0">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <h1 class="text-2xl md:text-3xl text-gray-800 font-bold">
+                    {% if form.instance.id %}Edit{% else %}Create{% endif %} Employee
+                </h1>
+            </div>
+            <p class="mt-1 text-sm text-gray-500">
+                {% if form.instance.id %}
+                Update employee information and role
+                {% else %}
+                Add a new employee to the restaurant staff
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Back button -->
+        <div>
+            <a href="{% url 'employees' %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Employees
+            </a>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Employee Information</h2>
+                <p class="mt-1 text-sm text-gray-500">Fill in the employee details below</p>
+            </div>
+            <div class="px-6 py-6">
+                <form method="POST" class="space-y-6" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Name -->
+                    <div class="form-group">
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Name <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            {{ form.name }}
+                        </div>
+                        {% for error in form.name.errors %}
+                            <div class="text-red-600 text-sm mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Email <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            {{ form.email }}
+                        </div>
+                        {% for error in form.email.errors %}
+                            <div class="text-red-600 text-sm mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-group">
+                        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Phone <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            {{ form.phone }}
+                        </div>
+                        {% for error in form.phone.errors %}
+                            <div class="text-red-600 text-sm mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Salary -->
+                    <div class="form-group">
+                        <label for="{{ form.salary.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Salary <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">₹</span>
+                            </div>
+                            {{ form.salary }}
+                        </div>
+                        {% for error in form.salary.errors %}
+                            <div class="text-red-600 text-sm mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Role -->
+                    <div class="form-group">
+                        <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Role <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            {{ form.role }}
+                        </div>
+                        {% for error in form.role.errors %}
+                            <div class="text-red-600 text-sm mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="pt-5 border-t border-gray-200">
+                        <div class="flex justify-end space-x-3">
+                            <a href="{% url 'employees' %}" class="btn btn-secondary inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                {% if form.instance.id %}
+                                    <svg class="w-4 h-4 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    Update Employee
+                                {% else %}
+                                    <svg class="w-4 h-4 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Create Employee
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

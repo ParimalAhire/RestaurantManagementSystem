@@ -1,0 +1,10 @@
+{% extends 'restaurant/base.html' %}
+
+{% block content %}
+    <h2>Are you sure you want to delete the customer: {{ customer.name }}?</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="{% url 'customers' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

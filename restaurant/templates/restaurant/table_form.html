@@ -1,0 +1,142 @@
+{% extends 'restaurant/base.html' %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+    <!-- Header -->
+    <div class="sm:flex sm:justify-between sm:items-center mb-8">
+        <div class="mb-4 sm:mb-0">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <h1 class="text-2xl md:text-3xl text-gray-800 font-bold">{{ title }}</h1>
+            </div>
+            <p class="mt-1 text-sm text-gray-500">{% if form.instance.pk %}Update existing table information{% else %}Create a new table in the restaurant{% endif %}</p>
+        </div>
+
+        <!-- Back button -->
+        <div>
+            <a href="{% url 'tables' %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Tables
+            </a>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Table Details</h2>
+                <p class="mt-1 text-sm text-gray-500">Fill in the table information below</p>
+            </div>
+            <div class="px-6 py-6">
+                <form method="POST" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <!-- Table Number -->
+                    <div>
+                        <label for="id_number" class="block text-sm font-medium text-gray-700">
+                            Table Number
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            {{ form.number }}
+                        </div>
+                        {% if form.number.errors %}
+                            {% for error in form.number.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Capacity -->
+                    <div>
+                        <label for="id_capacity" class="block text-sm font-medium text-gray-700">
+                            Capacity
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1">
+                            {{ form.capacity }}
+                        </div>
+                        {% if form.capacity.errors %}
+                            {% for error in form.capacity.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Customer -->
+                    <div>
+                        <label for="id_customer" class="block text-sm font-medium text-gray-700">
+                            Customer
+                        </label>
+                        <div class="mt-1">
+                            {{ form.customer }}
+                        </div>
+                        {% if form.customer.errors %}
+                            {% for error in form.customer.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Occupied -->
+                    <div>
+                        <div class="flex items-center">
+                            {{ form.occupied }}
+                            <label for="id_occupied" class="ml-2 block text-sm font-medium text-gray-700">
+                                Occupied
+                            </label>
+                        </div>
+                        {% if form.occupied.errors %}
+                            {% for error in form.occupied.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="pt-4 flex items-center justify-end space-x-3">
+                        <a href="{% url 'tables' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% if form.instance.pk %}
+                                <svg class="w-4 h-4 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Save Changes
+                            {% else %}
+                                <svg class="w-4 h-4 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Create Table
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Custom form styling */
+    input[type="text"],
+    input[type="number"],
+    select {
+        @apply mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm;
+    }
+    
+    input[type="checkbox"] {
+        @apply h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded;
+    }
+    
+    .errorlist {
+        @apply mt-2 text-sm text-red-600;
+    }
+</style>
+{% endblock %}
