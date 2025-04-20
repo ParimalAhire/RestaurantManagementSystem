@@ -4,8 +4,10 @@ import {
   type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem,
   type Customer, type InsertCustomer,
-  type CustomerVisit, type InsertCustomerVisit,
-  menuItems, tables, orders, orderItems, customers, customerVisits
+  type Employee, type InsertEmployee,
+  type EmployeeRole, type InsertEmployeeRole,
+  type TableReservation, type InsertTableReservation,
+  menuItems, tables, orders, orderItems, customers, employees, employeeRoles, tableReservations
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -28,10 +30,18 @@ export interface IStorage {
   getCustomers(): Promise<Customer[]>;
   getCustomer(id: number): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
-  getCustomerVisits(customerId: number): Promise<CustomerVisit[]>;
-  createCustomerVisit(visit: InsertCustomerVisit): Promise<CustomerVisit>;
-  updateCustomerVisit(id: number, endTime: Date): Promise<CustomerVisit | undefined>;
-
+  
+  // Employees
+  getEmployees(): Promise<Employee[]>;
+  getEmployee(id: number): Promise<Employee | undefined>;
+  createEmployee(employee: InsertEmployee): Promise<Employee>;
+  updateEmployee(id: number, employee: Partial<InsertEmployee>): Promise<Employee | undefined>;
+  
+  // Employee Roles
+  getEmployeeRoles(): Promise<EmployeeRole[]>;
+  getEmployeeRole(id: number): Promise<EmployeeRole | undefined>;
+  createEmployeeRole(role: InsertEmployeeRole): Promise<EmployeeRole>;
+  
   // Orders
   getOrders(): Promise<Order[]>;
   getOrder(id: number): Promise<Order | undefined>;
@@ -40,6 +50,11 @@ export interface IStorage {
   getOrderItems(orderId: number): Promise<OrderItem[]>;
   createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
   getCustomerOrders(customerId: number): Promise<Order[]>;
+  
+  // Table Reservations
+  getTableReservations(): Promise<TableReservation[]>;
+  getTableReservation(customerId: number, tableId: number): Promise<TableReservation | undefined>;
+  createTableReservation(reservation: InsertTableReservation): Promise<TableReservation>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -54,25 +69,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMenuItem(item: InsertMenuItem): Promise<MenuItem> {
-    const [menuItem] = await db.insert(menuItems).values(item).returning();
-    return menuItem;
+    await db.insert(menuItems).values(item);
+    const [lastItem] = await db.select().from(menuItems).orderBy(menuItems.id).limit(1);
+    return lastItem;
+  }
+
+  async createMenuItems(items: InsertMenuItem[]): Promise<MenuItem[]> {
+    // Insert menu items one by one
+    await Promise.all(
+      items.map(async (item) => {
+        await db.insert(menuItems).values(item);
+      })
+    );
+
+    // Just return all menu items for now
+    // In a production app, you'd want to filter this better
+    return await db.select().from(menuItems);
   }
 
   async updateMenuItem(id: number, item: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
-    const [updated] = await db
-      .update(menuItems)
-      .set(item)
-      .where(eq(menuItems.id, id))
-      .returning();
+    await db.update(menuItems).set(item).where(eq(menuItems.id, id));
+    const [updated] = await db.select().from(menuItems).where(eq(menuItems.id, id));
     return updated;
   }
 
   async deleteMenuItem(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(menuItems)
-      .where(eq(menuItems.id, id))
-      .returning();
-    return !!deleted;
+    await db.delete(menuItems).where(eq(menuItems.id, id));
+    return true;
   }
 
   // Tables
@@ -86,16 +109,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTable(table: InsertTable): Promise<Table> {
-    const [newTable] = await db.insert(tables).values(table).returning();
-    return newTable;
+    await db.insert(tables).values(table);
+    const [lastTable] = await db.select().from(tables).orderBy(tables.id).limit(1);
+    return lastTable;
   }
 
   async updateTable(id: number, table: Partial<InsertTable>): Promise<Table | undefined> {
-    const [updated] = await db
-      .update(tables)
-      .set(table)
-      .where(eq(tables.id, id))
-      .returning();
+    await db.update(tables).set(table).where(eq(tables.id, id));
+    const [updated] = await db.select().from(tables).where(eq(tables.id, id));
     return updated;
   }
 
@@ -110,29 +131,60 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCustomer(customer: InsertCustomer): Promise<Customer> {
-    const [newCustomer] = await db.insert(customers).values(customer).returning();
-    return newCustomer;
+    await db.insert(customers).values(customer);
+    const [lastCustomer] = await db.select().from(customers).orderBy(customers.id).limit(1);
+    return lastCustomer;
   }
 
-  async getCustomerVisits(customerId: number): Promise<CustomerVisit[]> {
-    return await db
-      .select()
-      .from(customerVisits)
-      .where(eq(customerVisits.customerId, customerId));
+  async createCustomers(customersList: InsertCustomer[]): Promise<Customer[]> {
+    // Insert customers one by one
+    await Promise.all(
+      customersList.map(async (customer) => {
+        await db.insert(customers).values(customer);
+      })
+    );
+
+    // Just return all customers for now
+    // In a production app, you'd want to filter this better
+    return await db.select().from(customers);
+  }
+  
+  // Employees
+  async getEmployees(): Promise<Employee[]> {
+    return await db.select().from(employees);
   }
 
-  async createCustomerVisit(visit: InsertCustomerVisit): Promise<CustomerVisit> {
-    const [newVisit] = await db.insert(customerVisits).values(visit).returning();
-    return newVisit;
+  async getEmployee(id: number): Promise<Employee | undefined> {
+    const [employee] = await db.select().from(employees).where(eq(employees.id, id));
+    return employee;
   }
 
-  async updateCustomerVisit(id: number, endTime: Date): Promise<CustomerVisit | undefined> {
-    const [updated] = await db
-      .update(customerVisits)
-      .set({ endTime })
-      .where(eq(customerVisits.id, id))
-      .returning();
+  async createEmployee(employee: InsertEmployee): Promise<Employee> {
+    await db.insert(employees).values(employee);
+    const [lastEmployee] = await db.select().from(employees).orderBy(employees.id).limit(1);
+    return lastEmployee;
+  }
+
+  async updateEmployee(id: number, employee: Partial<InsertEmployee>): Promise<Employee | undefined> {
+    await db.update(employees).set(employee).where(eq(employees.id, id));
+    const [updated] = await db.select().from(employees).where(eq(employees.id, id));
     return updated;
+  }
+  
+  // Employee Roles
+  async getEmployeeRoles(): Promise<EmployeeRole[]> {
+    return await db.select().from(employeeRoles);
+  }
+
+  async getEmployeeRole(id: number): Promise<EmployeeRole | undefined> {
+    const [role] = await db.select().from(employeeRoles).where(eq(employeeRoles.id, id));
+    return role;
+  }
+
+  async createEmployeeRole(role: InsertEmployeeRole): Promise<EmployeeRole> {
+    await db.insert(employeeRoles).values(role);
+    const [lastRole] = await db.select().from(employeeRoles).orderBy(employeeRoles.id).limit(1);
+    return lastRole;
   }
 
   // Orders
@@ -146,16 +198,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
-    const [newOrder] = await db.insert(orders).values(order).returning();
-    return newOrder;
+    await db.insert(orders).values(order);
+    const [lastOrder] = await db.select().from(orders).orderBy(orders.id).limit(1);
+    return lastOrder;
   }
 
   async updateOrder(id: number, order: Partial<InsertOrder>): Promise<Order | undefined> {
-    const [updated] = await db
-      .update(orders)
-      .set(order)
-      .where(eq(orders.id, id))
-      .returning();
+    await db.update(orders).set(order).where(eq(orders.id, id));
+    const [updated] = await db.select().from(orders).where(eq(orders.id, id));
     return updated;
   }
 
@@ -167,8 +217,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrderItem(item: InsertOrderItem): Promise<OrderItem> {
-    const [orderItem] = await db.insert(orderItems).values(item).returning();
-    return orderItem;
+    await db.insert(orderItems).values(item);
+    const [lastItem] = await db.select().from(orderItems).orderBy(orderItems.id).limit(1);
+    return lastItem;
   }
 
   async getCustomerOrders(customerId: number): Promise<Order[]> {
@@ -176,6 +227,34 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(orders)
       .where(eq(orders.customerId, customerId));
+  }
+  
+  // Table Reservations
+  async getTableReservations(): Promise<TableReservation[]> {
+    return await db.select().from(tableReservations);
+  }
+
+  async getTableReservation(customerId: number, tableId: number): Promise<TableReservation | undefined> {
+    const [reservation] = await db
+      .select()
+      .from(tableReservations)
+      .where(
+        eq(tableReservations.customerId, customerId) && 
+        eq(tableReservations.tableId, tableId)
+      );
+    return reservation;
+  }
+
+  async createTableReservation(reservation: InsertTableReservation): Promise<TableReservation> {
+    await db.insert(tableReservations).values(reservation);
+    const [lastReservation] = await db
+      .select()
+      .from(tableReservations)
+      .where(
+        eq(tableReservations.customerId, reservation.customerId) && 
+        eq(tableReservations.tableId, reservation.tableId)
+      );
+    return lastReservation;
   }
 }
 

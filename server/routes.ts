@@ -1,7 +1,16 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertMenuItemSchema, insertOrderSchema, insertTableSchema, insertOrderItemSchema, insertCustomerSchema, insertCustomerVisitSchema } from "@shared/schema";
+import { 
+  insertMenuItemSchema, 
+  insertOrderSchema, 
+  insertTableSchema, 
+  insertOrderItemSchema, 
+  insertCustomerSchema,
+  insertEmployeeSchema,
+  insertEmployeeRoleSchema,
+  insertTableReservationSchema
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express) {
   // Menu Items
@@ -93,30 +102,20 @@ export async function registerRoutes(app: Express) {
     res.status(201).json(customer);
   });
 
-  app.get("/api/customers/:id/visits", async (req, res) => {
+  app.get("/api/customers/:id/reservations", async (req, res) => {
     const id = parseInt(req.params.id);
-    const visits = await storage.getCustomerVisits(id);
-    res.json(visits);
+    const reservations = await storage.getTableReservations()
+      .then(reservations => reservations.filter(r => r.customerId === id));
+    res.json(reservations);
   });
 
-  app.post("/api/customers/:id/visits", async (req, res) => {
-    const customerId = parseInt(req.params.id);
-    const parsed = insertCustomerVisitSchema.safeParse({ ...req.body, customerId });
+  app.post("/api/table-reservations", async (req, res) => {
+    const parsed = insertTableReservationSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error });
     }
-    const visit = await storage.createCustomerVisit(parsed.data);
-    res.status(201).json(visit);
-  });
-
-  app.patch("/api/customer-visits/:id/end", async (req, res) => {
-    const id = parseInt(req.params.id);
-    const endTime = new Date();
-    const updated = await storage.updateCustomerVisit(id, endTime);
-    if (!updated) {
-      return res.status(404).json({ error: "Visit not found" });
-    }
-    res.json(updated);
+    const reservation = await storage.createTableReservation(parsed.data);
+    res.status(201).json(reservation);
   });
 
   app.get("/api/customers/:id/orders", async (req, res) => {
@@ -171,6 +170,36 @@ export async function registerRoutes(app: Express) {
       return res.status(404).json({ error: "Order not found" });
     }
     res.json(updated);
+  });
+
+  // Employee Roles
+  app.get("/api/employee-roles", async (req, res) => {
+    const roles = await storage.getEmployeeRoles();
+    res.json(roles);
+  });
+
+  app.post("/api/employee-roles", async (req, res) => {
+    const parsed = insertEmployeeRoleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error });
+    }
+    const role = await storage.createEmployeeRole(parsed.data);
+    res.status(201).json(role);
+  });
+
+  // Employees
+  app.get("/api/employees", async (req, res) => {
+    const employees = await storage.getEmployees();
+    res.json(employees);
+  });
+
+  app.post("/api/employees", async (req, res) => {
+    const parsed = insertEmployeeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error });
+    }
+    const employee = await storage.createEmployee(parsed.data);
+    res.status(201).json(employee);
   });
 
   const httpServer = createServer(app);
