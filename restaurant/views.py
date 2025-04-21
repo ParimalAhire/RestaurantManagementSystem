@@ -3,10 +3,37 @@ from datetime import datetime, timedelta, timezone
 from .models import MenuItem, Table, Customer, Order, Employee, OrderItem
 from .forms import CustomerForm, TableForm, MenuItemForm, OrderForm, OrderItemForm, UpdateOrderForm, UpdateOrderItemForm, EmployeeForm
 from django.contrib import messages
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
+from django.utils import timezone
 
 def dashboard(request):
+    # Get weekly sales data
+    today = timezone.now().date()
+    week_start = today - timedelta(days=today.weekday())
+    weekly_sales = []
+    
+    for i in range(7):
+        day = week_start + timedelta(days=i)
+        day_sales = Order.objects.filter(
+            created_at__date=day
+        ).aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0
+        weekly_sales.append(float(day_sales))
+
+    # Get popular items data
+    popular_items = OrderItem.objects.values(
+        'menu_item__name'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')[:4]
+
+    popular_items_data = {
+        'labels': [item['menu_item__name'] for item in popular_items],
+        'data': [item['count'] for item in popular_items]
+    }
+
     total_orders = Order.objects.count()
     occupied_tables = Table.objects.filter(occupied=True).count()
     total_menu_items = MenuItem.objects.count()
@@ -19,6 +46,8 @@ def dashboard(request):
         'total_menu_items': total_menu_items,
         'total_customers': total_customers,
         'total_employees': total_employees,
+        'weekly_sales': weekly_sales,
+        'popular_items': popular_items_data,
     }
     return render(request, 'restaurant/dashboard.html', context)
 
