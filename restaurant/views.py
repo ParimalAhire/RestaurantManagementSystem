@@ -122,7 +122,7 @@ def add_menu_item(request):
         form = MenuItemForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('menu_list')  # Redirect to menu list
+            return redirect('menu')  # Redirect to menu list
     else:
         form = MenuItemForm()
     return render(request, 'restaurant/menu_form.html', {'form': form})
@@ -134,7 +134,7 @@ def update_menu_item(request, pk):
         form = MenuItemForm(request.POST, instance=menu_item)
         if form.is_valid():
             form.save()
-            return redirect('menu_list')
+            return redirect('menu')
     else:
         form = MenuItemForm(instance=menu_item)
     return render(request, 'restaurant/menu_form.html', {'form': form})
@@ -287,7 +287,7 @@ def create_employee(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Employee created successfully!")
-            return redirect('employee_dashboard')  # Redirect to employee dashboard after creating an employee
+            return redirect('employees')  # Redirect to employee dashboard after creating an employee
     else:
         form = EmployeeForm()
     return render(request, 'restaurant/employee_form.html', {'form': form})
@@ -300,7 +300,7 @@ def update_employee(request, employee_id):
         if form.is_valid():
             form.save()
             messages.success(request, "Employee updated successfully!")
-            return redirect('employee_dashboard')  # Redirect to employee dashboard after updating
+            return redirect('employees')  # Redirect to employee dashboard after updating
     else:
         form = EmployeeForm(instance=employee)
     return render(request, 'restaurant/employee_form.html', {'form': form})
@@ -310,7 +310,7 @@ def delete_employee(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
     employee.delete()
     messages.success(request, "Employee deleted successfully!")
-    return redirect('employee') 
+    return redirect('employees') 
 
 def increase_item_quantity(request, order_id, item_id):
     item = get_object_or_404(OrderItem, id=item_id)
@@ -333,29 +333,35 @@ def delete_order_item(request, item_id):
     item.delete()
     return redirect('order_detail', id=order_id)
 
-
 def dashboard_view(request):
     today = timezone.now().date()
     week_ago = today - timedelta(days=7)
     month_ago = today - timedelta(days=30)
 
-    total_tables = Table.objects.count()  # Total number of tables
-    occupied_tables_today = Table.objects.filter(status='occupied', updated_at__date=today).count()
-    occupied_tables_week = Table.objects.filter(status='occupied', updated_at__gte=week_ago).count()
-    occupied_tables_month = Table.objects.filter(status='occupied', updated_at__gte=month_ago).count()
+    total_tables = Table.objects.count()
+
+    # Filter occupied tables correctly by checking occupied=True and updated today
+    occupied_tables_today = Table.objects.filter(occupied=True, updated_at__date=today).count()
+    occupied_tables_week = Table.objects.filter(occupied=True, updated_at__gte=week_ago).count()
+    occupied_tables_month = Table.objects.filter(occupied=True, updated_at__gte=month_ago).count()
 
     context = {
-        'total_orders': Order.objects.filter(date=today).count(),
-        'total_orders_week': Order.objects.filter(date__gte=week_ago).count(),
-        'total_orders_month': Order.objects.filter(date__gte=month_ago).count(),
+        'total_orders': Order.objects.filter(created_at__date=today).count(),
+        'total_orders_week': Order.objects.filter(created_at__gte=week_ago).count(),
+        'total_orders_month': Order.objects.filter(created_at__gte=month_ago).count(),
+
         'occupied_tables': occupied_tables_today,
         'occupied_tables_week': occupied_tables_week,
         'occupied_tables_month': occupied_tables_month,
+
         'total_menu_items': MenuItem.objects.count(),
         'total_customers': Customer.objects.count(),
         'total_customers_week': Customer.objects.filter(created_at__gte=week_ago).count(),
         'total_customers_month': Customer.objects.filter(created_at__gte=month_ago).count(),
+
         'total_employees': Employee.objects.count(),
+        'total_tables': total_tables,
+
         'occupancy_rate': (occupied_tables_today / total_tables * 100) if total_tables > 0 else 0,
         'occupancy_rate_week': (occupied_tables_week / total_tables * 100) if total_tables > 0 else 0,
         'occupancy_rate_month': (occupied_tables_month / total_tables * 100) if total_tables > 0 else 0,
