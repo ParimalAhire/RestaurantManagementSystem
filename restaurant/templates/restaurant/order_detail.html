@@ -24,6 +24,32 @@
         </div>
     </div>
 
+    <!-- Order Status Section -->
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900 mb-1">Order Status</h2>
+                <p class="text-sm text-gray-600">Current status: 
+                    <span class="font-medium text-blue-600">{{ order.status }}</span>
+                </p>
+            </div>
+            <form method="post" action="{% url 'change_order_status' order.id %}" class="flex items-center space-x-4">
+                {% csrf_token %}
+                <select name="status" class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    {% for status, label in order.ORDER_STATUS_CHOICES %}
+                        <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+                    Update
+                </button>
+            </form>
+        </div>
+    </div>
+
+
     <!-- Order Items Card -->
     <div class="bg-white shadow-lg rounded-lg overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">

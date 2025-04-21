@@ -384,3 +384,11 @@ def dashboard_view(request):
     return render(request, 'restaurant/dashboard.html', context)
 
 
+def change_order_status(request, order_id):
+    order = get_object_or_404(Order, pk=order_id)
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in dict(Order.ORDER_STATUS_CHOICES):
+            order.status = new_status
+            order.save()
+    return redirect('order_detail', id=order.id)
