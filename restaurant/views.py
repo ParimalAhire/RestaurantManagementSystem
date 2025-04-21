@@ -313,25 +313,40 @@ def delete_employee(request, employee_id):
     return redirect('employees') 
 
 def increase_item_quantity(request, order_id, item_id):
-    item = get_object_or_404(OrderItem, id=item_id)
+    item = get_object_or_404(OrderItem, id=item_id, order_id=order_id)
     item.quantity += 1
+    item.price = item.quantity * item.menu_item.price
     item.save()
+
+    # Update order total
+    order = item.order
+    order.total_amount = sum(i.price for i in order.orderitem_set.all())
+    order.save()
+
     return redirect('order_detail', id=order_id)
 
 def decrease_item_quantity(request, order_id, item_id):
-    item = get_object_or_404(OrderItem, id=item_id)
+    item = get_object_or_404(OrderItem, id=item_id, order_id=order_id)
+    order = item.order
+
     if item.quantity > 1:
         item.quantity -= 1
+        item.price = item.quantity * item.menu_item.price
         item.save()
     else:
         item.delete()
+
+    # Update order total
+    order.total_amount = sum(i.price for i in order.orderitem_set.all())
+    order.save()
+
     return redirect('order_detail', id=order_id)
 
-def delete_order_item(request, item_id):
-    item = get_object_or_404(OrderItem, id=item_id)
-    order_id = item.order.id
-    item.delete()
-    return redirect('order_detail', id=order_id)
+# def delete_order_item(request, item_id):
+#     item = get_object_or_404(OrderItem, id=item_id)
+#     order_id = item.order.id
+#     item.delete()
+#     return redirect('order_detail', id=order_id)
 
 def dashboard_view(request):
     today = timezone.now().date()
@@ -367,3 +382,5 @@ def dashboard_view(request):
         'occupancy_rate_month': (occupied_tables_month / total_tables * 100) if total_tables > 0 else 0,
     }
     return render(request, 'restaurant/dashboard.html', context)
+
+
