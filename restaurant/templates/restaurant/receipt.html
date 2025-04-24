@@ -1,0 +1,36 @@
+<div class="receipt">
+    <div class="header">
+        <h2>Restaurant Receipt</h2>
+        <p>Order #{{ order.id }}</p>
+        <p>{{ order.created_at|date:"F j, Y H:i" }}</p>
+    </div>
+
+    <div class="customer-info">
+        <p><strong>Table:</strong> {{ order.table.number }}</p>
+        {% if order.customer %}
+        <p><strong>Customer:</strong> {{ order.customer.name }}</p>
+        {% endif %}
+    </div>
+
+    <div class="items">
+        <h3>Order Items</h3>
+        {% for item in order.orderitem_set.all %}
+        <div class="item">
+            <span>{{ item.menu_item.name }} x {{ item.quantity }}</span>
+            <span>₹{{ item.price }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="total">
+        <div class="item">
+            <span><strong>Total Amount:</strong></span>
+            <span><strong>₹{{ order.total_amount }}</strong></span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Thank you for dining with us!</p>
+        <p>Please visit again</p>
+    </div>
+</div> 
