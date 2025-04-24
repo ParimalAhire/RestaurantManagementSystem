@@ -45,6 +45,6 @@ urlpatterns = [
     path('dashboard/', views.dashboard_view, name='dashboard.view'),
     path('orders/<int:order_id>/item/<int:item_id>/decrease/', views.decrease_item_quantity, name='decrease_item_quantity'),
     path('orders/<int:order_id>/item/<int:item_id>/increase/', views.increase_item_quantity, name='increase_item_quantity'),
-
+    path('order-receipt/<int:order_id>/', views.order_receipt, name='order_receipt'),
 
 ]

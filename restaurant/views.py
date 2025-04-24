@@ -416,3 +416,7 @@ def change_order_status(request, order_id):
             order.status = new_status
             order.save()
     return redirect('order_detail', id=order.id)
+
+def order_receipt(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    return render(request, 'restaurant/receipt.html', {'order': order})
