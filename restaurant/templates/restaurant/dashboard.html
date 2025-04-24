@@ -1,4 +1,5 @@
 {% extends 'restaurant/base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container-fluid fade-in">
@@ -158,5 +159,96 @@
             </div>
         </div>
     </div>
+
+    <!-- Charts Section (Moved and Resized) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <!-- Weekly Sales Chart -->
+        <div class="card col-span-2 bg-white dark:bg-gray-800 shadow-lg">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Weekly Sales</h5>
+            </div>
+            <div class="p-4">
+                <canvas id="weeklySalesChart" class="w-full h-64"></canvas>
+            </div>
+        </div>
+
+        <!-- Popular Items Chart -->
+        <div class="card bg-white dark:bg-gray-800 shadow-lg">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h5 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Popular Items</h5>
+            </div>
+            <div class="p-4">
+                <canvas id="popularItemsChart" class="w-full h-64"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Charts Initialization -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Weekly Sales Chart
+    const weeklySalesCtx = document.getElementById('weeklySalesChart').getContext('2d');
+    new Chart(weeklySalesCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Sales ($)',
+                data: {{ weekly_sales|safe }},
+                backgroundColor: '#8B0000',
+                borderColor: '#8B0000',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#f0f0f0'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Popular Items Chart
+    const popularItemsCtx = document.getElementById('popularItemsChart').getContext('2d');
+    new Chart(popularItemsCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ popular_items.labels|safe }},
+            datasets: [{
+                data: {{ popular_items.data|safe }},
+                backgroundColor: ['#8B0000', '#FFD700', '#FFA500', '#006400']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

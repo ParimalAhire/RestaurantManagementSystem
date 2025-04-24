@@ -157,7 +157,7 @@ class EmployeeForm(forms.ModelForm):
             'salary': forms.NumberInput(attrs={
                 'class': 'mt-1 block w-full px-3 py-2 text-sm rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'
             }),
-            'role': forms.TextInput(attrs={
+            'role': forms.Select(attrs={
                 'class': 'mt-1 block w-full px-3 py-2 text-sm rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'
             }),
         }
