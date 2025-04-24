@@ -77,13 +77,12 @@ def customer_list(request):
     customers = Customer.objects.all()
     return render(request, 'restaurant/customers.html', {'customers': customers})
 
-# View to add a new customer (no pk required)
 def add_customer(request):
     if request.method == "POST":
         form = CustomerForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('customers')  # Redirect to the customer list after saving
+            return redirect('customers')  
     else:
         form = CustomerForm()
 
@@ -91,12 +90,12 @@ def add_customer(request):
 
 # View to edit an existing customer (pk required)
 def edit_customer(request, pk):
-    customer = get_object_or_404(Customer, pk=pk)  # Retrieve the customer by pk
+    customer = get_object_or_404(Customer, pk=pk)  
     if request.method == "POST":
         form = CustomerForm(request.POST, instance=customer)
         if form.is_valid():
             form.save()
-            return redirect('customers')  # Redirect to the customer list after updating
+            return redirect('customers')  
     else:
         form = CustomerForm(instance=customer)
 
@@ -117,7 +116,7 @@ def add_table(request):
     if request.method == 'POST':
         form = TableForm(request.POST)
         if form.is_valid():
-            form.save()  # Table is saved without a customer initially
+            form.save()  
             return redirect('tables')
     else:
         form = TableForm()
@@ -128,7 +127,7 @@ def edit_table(request, pk):
     if request.method == 'POST':
         form = TableForm(request.POST, instance=table)
         if form.is_valid():
-            form.save()  # If customer is assigned, table will be marked as occupied
+            form.save()  
             return redirect('tables')
     else:
         form = TableForm(instance=table)
@@ -151,7 +150,7 @@ def add_menu_item(request):
         form = MenuItemForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('menu')  # Redirect to menu list
+            return redirect('menu') 
     else:
         form = MenuItemForm()
     return render(request, 'restaurant/menu_form.html', {'form': form})
@@ -177,7 +176,7 @@ def delete_menu_item(request, pk):
 
 # Orders
 def order_list(request):
-    orders = Order.objects.all()  # Get all orders
+    orders = Order.objects.all() 
     return render(request, 'restaurant/order.html', {'orders': orders})
 
 
@@ -232,7 +231,6 @@ def update_order(request, order_id):
         if form.is_valid():
             form.save()
 
-            # Recalculate the total_amount after updating order status
             order.total_amount = sum(item.price * item.quantity for item in order.orderitem_set.all())
             order.save()
 
@@ -251,7 +249,6 @@ def update_order_item(request, order_item_id):
         if form.is_valid():
             order_item = form.save()
 
-            # Recalculate the total amount for the order
             order_item.order.total_amount = sum(item.price * item.quantity for item in order_item.order.orderitem_set.all())
             order_item.order.save()
 
@@ -273,7 +270,6 @@ def delete_order_item(request, order_item_id):
     order = order_item.order
     order_item.delete()
 
-    # Recalculate the total amount after deleting an order item
     order.total_amount = sum(item.price * item.quantity for item in order.orderitem_set.all())
     order.save()
 
@@ -294,9 +290,9 @@ def add_order_item(request, order_id):
         form = OrderItemForm(request.POST)
         if form.is_valid():
             order_item = form.save(commit=False)
-            order_item.order = order  # Associate the order with the item
+            order_item.order = order  
             order_item.save()
-            return redirect('order_detail', id=order.id)  # Redirect to the order details page
+            return redirect('order_detail', id=order.id)  
     
     else:
         form = OrderItemForm()
@@ -316,7 +312,7 @@ def create_employee(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Employee created successfully!")
-            return redirect('employees')  # Redirect to employee dashboard after creating an employee
+            return redirect('employees')  
     else:
         form = EmployeeForm()
     return render(request, 'restaurant/employee_form.html', {'form': form})
@@ -329,7 +325,7 @@ def update_employee(request, employee_id):
         if form.is_valid():
             form.save()
             messages.success(request, "Employee updated successfully!")
-            return redirect('employees')  # Redirect to employee dashboard after updating
+            return redirect('employees')  
     else:
         form = EmployeeForm(instance=employee)
     return render(request, 'restaurant/employee_form.html', {'form': form})
@@ -384,7 +380,6 @@ def dashboard_view(request):
 
     total_tables = Table.objects.count()
 
-    # Filter occupied tables correctly by checking occupied=True and updated today
     occupied_tables_today = Table.objects.filter(occupied=True, updated_at__date=today).count()
     occupied_tables_week = Table.objects.filter(occupied=True, updated_at__gte=week_ago).count()
     occupied_tables_month = Table.objects.filter(occupied=True, updated_at__gte=month_ago).count()
